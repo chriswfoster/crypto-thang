@@ -1,0 +1,1 @@
+SELECT * FROM coins WHERE abv_name = $1
