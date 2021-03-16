@@ -31,7 +31,8 @@ massive({
     console.log("here")
     // dbInstance.coins.insert({abv_name: 'sdfadf', name: 'testeroo'})
     app.set('db', dbInstance);
-    hitNomicsLatest(dbInstance)
+    // hitNomicsLatest(dbInstance)
+    hitCoinMarketCapLatest(dbInstance)
 })
 .catch(err => {
     console.error(`An error occurred connecting to SQL: ${JSON.stringify(err)}`)
