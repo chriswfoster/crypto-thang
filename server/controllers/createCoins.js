@@ -11,16 +11,38 @@ const hitCoinMarketCapLatest = (dbInst) => {
         headers: {'X-CMC_PRO_API_KEY': process.env.COIN_MARKET_CAP_KEY}
     })
     .then(resp => {
-        console.log(resp.data.data.length);
         let updateObj = {};
         let createObj = {};
         
-        getCoins()
 
-        function getCoins() {
+        Async.series(
+            [
+              Async.apply(getCoins),
+              Async.apply(updateCoins),
+              Async.apply(createCoins),
+        
+            ],
+            (err, result) => {
+              if (err) {
+                log.err(
+                  `Async error detected: ${JSON.stringify(err)}`
+                );
+              } else {
+               console.log(`CoinMarketCap coin check complete`)
+              }
+            }
+          );
+
+        function getCoins(callback) {
             Async.eachSeries(resp.data.data, (coin, cb) => {
+                if(coin.symbol === 'ETH') {
+                    console.log('hey here it is')
+                }
                 dbInst.findCoinByAbv(coin.symbol)
                 .then(cSearch => {
+                    if(coin.symbol === 'ETH') {
+                        console.log('cSearcH: ', cSearch)
+                    }
                     // console.log(cSearch)
                     if(cSearch.length > 0) {
                         if(!cSearch[0].name || (!cSearch[0].public_date && coin.date_added)) {
@@ -33,14 +55,15 @@ const hitCoinMarketCapLatest = (dbInst) => {
                 })
             }, (err) => {
                 if(err) {
-                    console.error(`[hitCoinMarketCapLatest] Error getting aSync Data`)
+                    let errMsg = (`[hitCoinMarketCapLatest] Error getting aSync Data`)
+                    callback(errMsg);
                 } else {
-                    updateCoins();
+                    callback(null, true);
                 }
             })
         }
 
-        function updateCoins() {
+        function updateCoins(callback) {
             // console.log(Object.values(updateObj))
             Async.eachSeries(Object.values(updateObj), (coin, cb) => {
                 const {sqlObj, apiObj} = coin;
@@ -59,14 +82,16 @@ const hitCoinMarketCapLatest = (dbInst) => {
         
             }, (err) => {
                 if(err) {
-                    console.error(`[hitCoinMarketCapLatest][updateCoins] Error updating coins ${JSON.stringify(err)}`)
+                    let errMsg = (`[hitCoinMarketCapLatest][updateCoins] Error updating coins ${JSON.stringify(err)}`)
+                    callback(errMsg);
                 } else {
-                    createCoins();
+                    callback(null, true);
                 }
             })
         }
 
-        function createCoins(){
+        function createCoins(callback){
+            console.log("Coins to create: " + JSON.stringify(createObj))
             Async.eachSeries(Object.values(createObj), (coin, cb) => {
                 const {name, symbol, date_added} = coin
                 dbInst.coins.insert({abv_name: symbol, name: name, public_date: date_added})
@@ -80,8 +105,10 @@ const hitCoinMarketCapLatest = (dbInst) => {
                 })
             }, (err) => {
                 if(err) {
-                    console.error(`[hitCoinMarketCapLatest][createCoins] Error creating coins ${JSON.stringify(err)}`)
+                    let errMsg = (`[hitCoinMarketCapLatest][createCoins] Error creating coins ${JSON.stringify(err)}`)
+                    callback(errMsg);
                 } else {
+                    callback(null, true);
                     // what's next?
                 }
             })
