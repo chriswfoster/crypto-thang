@@ -14,9 +14,8 @@ require('dotenv').config();
 const app = express();
 app.use(cors());
 app.use(json());
-app.use('/api', router)
 
-app.use('/', router);
+app.use('/api', router);
 routes(router)
 
 const port = 3133;
@@ -40,6 +39,10 @@ massive({
 })
 .catch(err => {
     console.error(`An error occurred connecting to SQL: ${JSON.stringify(err)}`)
+})
+
+app.get('/test', () => {
+    console.log('hi')
 })
 // hitNomicsLatest()
 // hitCoinMarketCapLatest()

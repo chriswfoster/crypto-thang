@@ -1,0 +1,1 @@
+INSERT INTO tags (name) VALUES ($1)
